@@ -4,7 +4,7 @@
 
 
 * [介绍](README.md)
-* [起步](quickstart.md)
+* [快速上手](quickstart.md)
 * [指南](guides.md)
     * [模式（schemas）](schemas.md)
     * [模式类型（SchemaTypes）](schemaTypes.md)
