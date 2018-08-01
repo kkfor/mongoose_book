@@ -7,7 +7,7 @@
 * [快速上手](quickstart.md)
 * [指南](guides.md)
     * [模式（schemas）](schemas.md)
-    * [模式类型（SchemaTypes）](schemaTypes.md)
+    * [模式类型（SchemaTypes）](schematypes.md)
     * [连接（Connections）](connections.md)
     * [模型（Models）](models.md)
     * [文档（Documents）](documents.md)
