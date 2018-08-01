@@ -1,4 +1,4 @@
-## 起步
+## 快速上手
 
 首先确定你安装了`MongoDB`和`Node.js`。  
 接下来用`npm`在命令行中安装`Mongoose`:
@@ -88,4 +88,4 @@ Kitten.find({ name: /^fluff/ }, callback);
 它执行了对所有文档以“Fluff”开头的名字属性的搜索，通过回调返回一个猫的数组结果。
 
 ### 恭喜
-这是起步的最后。我们在MongoDB中用mongoose创建了一个schema,添加了一个自定义的文档方法，然后保存和查询。前往指南，或api文档。
+这是快速上手的最后。我们在MongoDB中用mongoose创建了一个schema,添加了一个自定义的文档方法，然后保存和查询。前往指南，或api文档。
