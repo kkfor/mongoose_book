@@ -648,14 +648,60 @@ MyModel.create([{ name: 'val' }, { name: 'Val' }]).
 ```
 
 #### 选项：skipVersioning
+`skipVersioning`允许从版本控制中排除路径（例如：尽管路径更新了，内部修订也不会增加）。除非你需要，否则不要这样做。对于子文档，用全部的路径在父文档中包含。
+
+```js
+new Schema({..}, { skipVersioning: { dontVersionMe: true } });
+thing.dontVersionMe.push('hey');
+thing.save(); // version不会增加
+```
 
 #### 选项：timestamps
+如果设置了`timestamps`，mongoose将为schema分配`createAt`和`updateAt`字段，分配字段的类型为`Date`。
+默认情况，两个字段的名字为`createAt`和`updateAt`，通过设置timestamps.createAt和timestamps.updateAt来自定义字段名。
+```js
+var thingSchema = new Schema({..}, { timestamps: { createdAt: 'created_at' } });
+var Thing = mongoose.model('Thing', thingSchema);
+var thing = new Thing();
+thing.save(); // `created_at` & `updatedAt` will be included
+```
 
 #### 选项：useNestedString
+在mongoose4，update()和findOneAndUpdate()只能检查顶级schema的严格模式设置。
+
+```js
+var childSchema = new Schema({}, { strict: false });
+var parentSchema = new Schema({ child: childSchema }, { strict: 'throw' });
+var Parent = mongoose.model('Parent', parentSchema);
+Parent.update({}, { 'child.name': 'Luke Skywalker' }, function(error) {
+  // Error because parentSchema has `strict: throw`, even though
+  // `childSchema` has `strict: false`
+});
+
+var update = { 'child.name': 'Luke Skywalker' };
+var opts = { strict: false };
+Parent.update({}, update, opts, function(error) {
+  // This works because passing `strict: false` to `update()` overwrites
+  // the parent schema.
+});
+```
+
+如果你设置`useNestedStrict`为true，mongoose将转换更新用子schema的strict选项
+
+```js
+var childSchema = new Schema({}, { strict: false });
+var parentSchema = new Schema({ child: childSchema },
+  { strict: 'throw', useNestedStrict: true });
+var Parent = mongoose.model('Parent', parentSchema);
+Parent.update({}, { 'child.name': 'Luke Skywalker' }, function(error) {
+  // Works!
+});
+```
 
 ### Pluggable
-
+模式是可插入的，它允许我们将可重用的特性打包成插件，这些插件可以被社区或你的其他项目间共享。
 ### 补充阅读
-
+为获取更多的MongoDB知识，你需要学习MongoDB模式设计基础。SQL模式设计（第三范式）被设计为最小存储，而MongoDB模式设计是尽可能快的进行常见查询。MongoDB模式设计博客六法则是学习快速查询的基本规则的优秀资源。
+希望在Node.js中掌握MongoDB模式设计的用户应该去看由MongoDB和Node.js的驱动者Christian Kvalheim写的的《The Little MongoDB Schema Design Book》。这本书向你展示了如果为一系列用例，包括电子商务，wiki和预约预定实现高性能的schema。
 ### 下一步
 现在我们已经介绍完了`Schema`，接下来看一看`SchemaTypes`
