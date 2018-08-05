@@ -122,3 +122,23 @@ doc.i = 3.001;
 doc.integerOnly; // 3
 doc.i; // 3
 ```
+
+##### 索引
+你可以用schema类型选项声明MongoDB的索引。
+- index: 布尔值，是否在属性中定义一个索引。
+- unique: 布尔值，是否在属性中定义一个唯一索引。
+- sparse: 布尔值，是否在属性中定义一个稀疏索引。
+
+```js
+var schema2 = new Schema({
+  test: {
+    type: String,
+    index: true,
+    unique: true // 如果指定`unique`为true，则为唯一索引
+    // 如果设置`unique`为true，则指定`index`是可选的
+  }
+});
+```
+
+##### 字符串
+- lowercase: 布尔值，
