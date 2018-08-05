@@ -87,7 +87,38 @@ var schema2 = new Schema({
 var schema2 = new Schema({
   test: {
     type: String,
-    lowercase: true // Always convert `test` to lowercase
+    lowercase: true // `test`总是被转化为小写
   }
 });
+```
+
+转化小写属性仅对字符串有效，某些选项适用于所有的schema类型，一些选项适用于特定的schema类型。
+##### 所有的Schema类型
+- required: 布尔值或函数，如果为true，则为此属性添加必须的验证。
+- default: 任意类型或函数，为路径设置一个默认的值。如果值是一个函数，则函数的返回值用作默认值。
+- select: 布尔值，指定查询的默认预测。
+- validate: 函数，对属性添加验证函数。
+- get: 函数，用`Object.defineProperty()`对属性声明一个getter。
+- set: 函数，用`Object.defineProperty()`对属性声明一个setter。
+- alias: 字符串，只对mongoose>=4.10.0有效。定义一个具有给定名称的虚拟属性，该名称可以获取/设置这个路径。
+
+```js
+var numberSchema = new Schema({
+  integerOnly: {
+    type: Number,
+    get: v => Math.round(v),
+    set: v => Math.round(v),
+    alias: 'i'
+  }
+});
+
+var Number = mongoose.model('Number', numberSchema);
+
+var doc = new Number();
+doc.integerOnly = 2.001;
+doc.integerOnly; // 2
+doc.i; // 2
+doc.i = 3.001;
+doc.integerOnly; // 3
+doc.i; // 3
 ```
