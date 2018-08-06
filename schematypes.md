@@ -141,4 +141,260 @@ var schema2 = new Schema({
 ```
 
 ##### 字符串
-- lowercase: 布尔值，
+- lowercase: 布尔值，是否总是对值调用`toLowerCase()`
+- uppercase: 布尔值，是否总是对值调用`toUpperCase()`
+- trim: 布尔值，是否总是对值调用`trim()`
+- match: 正则，创建一个验证器，验证值是否匹配给定的正则表达式
+- enum: 数组，创建一个验证器，验证值是否是给定数组中的元素
+- minlength: 数字，创建一个验证器，验证值的长度是不是大于给定的数
+- maxlength: 数字，创建一个验证器，验证值的长度是不是小于给定的数
+
+##### 数字
+- min: 数字，创建一个验证器，验证值是否大于等于给定的最小值
+- max: 数字，创建一个验证器，验证值是否小于等于给定的最大的值
+
+##### 日期
+- min: 日期
+- max: 日期
+
+### 使用说明
+#### Dates
+内建的日期方法没有挂到mongoose变化跟踪逻辑上，这意味着如果你在文档中使用Date方法，或用`setMonth()`一类的方法修改它，mongoose将不识别这种修改，`doc.save()`将不会保存这种修改。如果你必须用内建的方法修改Date类型，在保存前用`doc.markModified('pathToYourDate')`告诉mongoose改变。
+
+```js
+var Assignment = mongoose.model('Assignment', { dueDate: Date });
+Assignment.findOne(function (err, doc) {
+  doc.dueDate.setMonth(3);
+  doc.save(callback); // 不会保存修改
+
+  doc.markModified('dueDate');
+  doc.save(callback); // 会保存修改
+})
+```
+
+#### Mixed
+一个“任何类型都来源”SchemaType，它的灵活性源于难以维护的权衡。可以通过Schema.Type.Mixed或通过传递空对象来获取mixed。以下是等同的：
+
+```js
+var Any = new Schema({ any: {} });
+var Any = new Schema({ any: Object });
+var Any = new Schema({ any: Schema.Types.Mixed });
+```
+
+由于它是无模式类型，因为可以修改值为任意类型，但是Mongoose没有自动检查和保存这些变化的功能。告诉Mongoose混合类型的值已经改变，调用文档的`markModified(path)`方法将路径传递给刚更改的Mixed类型。
+
+```js
+person.anything = { x: [3, 4, { y: "changed" }] };
+person.markModified('anything');
+person.save(); // 任何东西现在都会被保存
+```
+
+#### ObjectIds
+指定ObjectId的类型，在声明中使用declaration。
+
+```js
+var mongoose = require('mongoose');
+var ObjectId = mongoose.Schema.Types.ObjectId;
+var Car = new Schema({ driver: ObjectId });
+// or just Schema.ObjectId for backwards compatibility with v2
+```
+
+### 布尔值
+布尔值在Mongoose中是普通的JavaScript布尔值。默认的，Mongoose转化以下值为`true`：
+- true
+- 'true'
+- 1
+- '1'
+- 'yes'
+
+Mongoose转化以下值为`false`：
+- false
+- 'false'
+- 0
+- '0'
+- 'no'
+
+其他值都会造成转化错误。你可以用`convertToTrue`和`convertToFalse`属性来修改Mongoose中哪些值转化为true或false，哪些是JavaScript集合。
+
+```js
+const M = mongoose.model('Test', new Schema({ b: Boolean }));
+console.log(new M({ b: 'nay' }).b); // undefined
+
+// Set { false, 'false', 0, '0', 'no' }
+console.log(mongoose.Schema.Types.Boolean.convertToFalse);
+
+mongoose.Schema.Types.Boolean.convertToFalse.add('nay');
+console.log(new M({ b: 'nay' }).b); // false
+```
+
+#### 数组
+Mongoose中Schematype和子文档支持数组。Schematype数组也成为原始数组，子文档数组也被称为文档数组。
+
+```js
+var ToySchema = new Schema({ name: String });
+var ToyBoxSchema = new Schema({
+  toys: [ToySchema],
+  buffers: [Buffer],
+  strings: [String],
+  numbers: [Number]
+  // ... etc
+});
+```
+
+数组是特殊的，因为隐含具有一个默认值[]（空数组）。
+
+```js
+var ToyBox = mongoose.model('ToyBox', ToyBoxSchema);
+console.log((new ToyBox()).toys); // []
+```
+
+要覆盖默认值，需要设置默认值为`undefined`
+
+```js
+var ToyBoxSchema = new Schema({
+  toys: {
+    type: [ToySchema],
+    default: undefined
+  }
+});
+```
+
+注意：指定一个空数组是等同于`Mixed`。以下都为Mixed创建数组：
+
+```js
+var Empty1 = new Schema({ any: [] });
+var Empty2 = new Schema({ any: Array });
+var Empty3 = new Schema({ any: [Schema.Types.Mixed] });
+var Empty4 = new Schema({ any: [{}] });
+```
+
+#### Maps
+
+5.1.0新特性
+
+一个`MongooseMap`是一个内置Map类的子类。在这些文档中我们将交替使用map和MongooseMap。在Mongoose中map是如何用任意键创建一个嵌套文档。
+
+```js
+const userSchema = new Schema({
+  // `socialMediaHandles` is a map whose values are strings. A map's
+  // keys are always strings. You specify the type of values using `of`.
+  socialMediaHandles: {
+    type: Map,
+    of: String
+  }
+});
+
+const User = mongoose.model('User', userSchema);
+// Map { 'github' => 'vkarpov15', 'twitter' => '@code_barbarian' }
+console.log(new User({
+  socialMediaHandles: {
+    github: 'vkarpov15',
+    twitter: '@code_barbarian'
+  }
+}).socialMediaHandles);
+```
+
+以上的雷子没有显式的声明`github`或`twitter`作为路径，但是，由于`socialMediaHandles`是一个map，你可以储存任意键/值对。然而由于`socialMediaHandles`是一个map，所以你必须用`get()`获取一个键的值和用`.set()`设置一个键的值。
+
+```js
+const user = new User({
+  socialMediaHandles: {}
+});
+
+// Good
+user.socialMediaHandles.set('github', 'vkarpov15');
+// Works too
+user.set('socialMediaHandles.twitter', '@code_barbarian');
+// Bad, the `myspace` property will **not** get saved
+user.socialMediaHandles.myspace = 'fail';
+
+// 'vkarpov15'
+console.log(user.socialMediaHandles.get('github'));
+// '@code_barbarian'
+console.log(user.get('socialMediaHandles.twitter'));
+// undefined
+user.socialMediaHandles.github;
+
+// Will only save the 'github' and 'twitter' properties
+user.save();
+```
+
+在MongoDB中map类型储存为BSON对象。在一个BSON对象中键是有序的，这意味着map维护着插入顺序的属性。
+
+### Getters
+Getter在schema中是像一个虚拟属性为了路径声明。例如，你想储存用户个人资料图片作为相对路径，然后在你的应用中添加主机名。以下是构建userSchema的方法：
+
+```js
+const root = 'https://s3.amazonaws.com/mybucket';
+
+const userSchema = new Schema({
+  name: String,
+  picture: {
+    type: String,
+    get: v => `${root}${v}`
+  }
+});
+
+const User = mongoose.model('User', userSchema);
+
+const doc = new User({ name: 'Val', picture: '/123.png' });
+doc.picture; // 'https://s3.amazonaws.com/mybucket/123.png'
+doc.toObject({ getters: false }).picture; // '123.png'
+```
+
+通常，你只在原始路径上使用getter而不是在数组或子文档中。因为getter会覆盖Mongoose路径返回的内容，在一个对象上声明一个getter可能会移除Mongoose对路径改变的跟踪。
+
+```js
+const schema = new Schema({
+  arr: [{ url: String }]
+});
+
+const root = 'https://s3.amazonaws.com/mybucket';
+
+// Bad, don't do this!
+schema.path('arr').get(v => {
+  return v.map(el => Object.assign(el, { url: root + el.url }));
+});
+
+// Later
+doc.arr.push({ key: String });
+doc.arr[0]; // 'undefined' because every `doc.arr` creates a new array!
+```
+
+如上所示，你应该声明一个getter在`url`字符串，而不是在数组上声明一个getter。如果你需要在嵌套文档或数组上声明getter，请小心。
+
+```js
+const schema = new Schema({
+  arr: [{ url: String }]
+});
+
+const root = 'https://s3.amazonaws.com/mybucket';
+
+// Good, do this instead of declaring a getter on `arr`
+schema.path('arr.0.url').get(v => `${root}${v}`);
+```
+
+### 创建自定义类型
+Mongoose可以扩展自定义SchemaType。在插件网站搜所兼容类型类似mongoose-long，mongoose-int32和其他类型。
+
+### `schema.path()`函数
+`schema.path()`返回给定路径的实例化模式类型。
+
+```js
+var sampleSchema = new Schema({ name: { type: String, required: true } });
+console.log(sampleSchema.path('name'));
+// Output looks like:
+/**
+ * SchemaString {
+ *   enumValues: [],
+ *   regExp: null,
+ *   path: 'name',
+ *   instance: 'String',
+ *   validators: ...
+ */
+```
+
+你可以用这个函数检查给出路径的模式类型，包含验证器和它的类型。
+
+### 接下来
+现在已经介绍完Schematype，让我们看一看Connections。
