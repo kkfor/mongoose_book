@@ -56,3 +56,6 @@ mongoose.connect(uri, options);
 以下是调用mongoose中一些重要的选项。
 - `useNewUrlParser` - 底层MongoDB已经废弃当前连接字符串解析器。因为这是一个重大的改变，添加了`useNewUrlParser`标记如果在用户遇到bug时，允许用户在新的解析器中返回旧的解析器。除非连接阻止设置，否则你应该设置`useNewUrlParser: true`。
 - `autoReconnect` - 当与MongoDB连接断开时，底层MongoDB驱动将会自动尝试重新连接。除非你是高级用户，想要控制他们自己的连接池，否则不要设置这个选项为`false`。
+- `reconnectTries` - 如果你连接到单个服务器或mongos代理（而不是副本集），MongoDB驱动将会在`reconnectTries`时间内的每一个`reconnectInterval`毫秒内重新连接，直到最后放弃连接。当驱动放弃连接的时候，mongoose连接将会触发`reconnectFailed`事件。此选项不会对副本集连接执行任何操作。
+- `reconnectInterval` - 查看`reconnectTries`
+- `promiseLibrary` - 设置底层驱动的promise库
