@@ -56,6 +56,9 @@ mongoose.connect(uri, options);
 以下是调用mongoose中一些重要的选项。
 - `useNewUrlParser` - 底层MongoDB已经废弃当前连接字符串解析器。因为这是一个重大的改变，添加了`useNewUrlParser`标记如果在用户遇到bug时，允许用户在新的解析器中返回旧的解析器。除非连接阻止设置，否则你应该设置`useNewUrlParser: true`。
 - `autoReconnect` - 当与MongoDB连接断开时，底层MongoDB驱动将会自动尝试重新连接。除非你是高级用户，想要控制他们自己的连接池，否则不要设置这个选项为`false`。
+- `reconnectTries` - 如果你连接到单个服务器或mongos代理（而不是副本集），MongoDB驱动将会在`reconnectTries`时间内的每一个`reconnectInterval`毫秒内重新连接，直到最后放弃连接。当驱动放弃连接的时候，mongoose连接将会触发`reconnectFailed`事件。此选项不会对副本集连接执行任何操作。
+- `reconnectInterval` - 查看`reconnectTries`
+- `promiseLibrary` - 设置底层驱动的promise库
 - `poolSize` - MongoDB驱动将为这个连接保持的最大socket数量。默认情况下，`poolSize`是5。请记住在MongoDB 3.4中，MongoDB每个socket每次只允许一个操作，如果你在进行中发现一些缓慢的查询阻止快的查询，你可以增加这个值。
 - `connectTimeoutMS` - MongoDB驱动在初始化连接失败时会等待多久。一旦Mongoose成功连接，`connectTimeoutMS`就不再有效。
 - `socketTimeoutMS` - MongoDB驱动在杀掉一个不活跃的socket时会等待多久。socket可能因为不再活动或长时间处于操作状态而处于不活跃状态。默认情况这个值是`30000`，如果你希望一些数据库操作运行事件超过20秒，你应该设置为最长运行时间的2-3倍。
