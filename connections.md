@@ -157,4 +157,64 @@ mongoose.connect('mongodb://mongosA:27501,mongosB:27501', cb);
 const conn = mongoose.createConnection('mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]', options);
 ```
 
-这个连接对象用于创建和索引模型。模型总是作用于单个连接。
+这个连接对象用于创建和索引模型。模型总是作用于单个连接。当你调用`mongoose.connect()`时mongoose会创建一个默认连接。你可以用`mongoose.connection`访问默认连接。
+
+### 连接池
+每个连接，无论由`mongoose.connect`或`mongoose.createConnection`创建都被内部配置连接池支持，默认最大值为5。可以修改连接选项来修改连接池大小。
+
+```js
+// With object options
+mongoose.createConnection(uri, { poolSize: 4 });
+
+const uri = 'mongodb://localhost:27017/test?poolSize=4';
+mongoose.createConnection(uri);
+```
+
+### 在v5.x中选项的改变
+如果你在4.x中没有使用`useMongoClient`，当从4.x升级到5.x的时候，你或许会收到以下弃用警告：
+
+```
+the server/replset/mongos options are deprecated, all their options are supported at the top level of the options object
+```
+
+在较早版本的MongoDB驱动中，必须为服务器连接、副本集连接和mongos连接指定不同的选项：
+
+```js
+mongoose.connect(myUri, {
+  server: {
+    socketOptions: {
+      socketTimeoutMS: 0,
+      keepAlive: true
+    },
+    reconnectTries: 30
+  },
+  replset: {
+    socketOptions: {
+      socketTimeoutMS: 0,
+      keepAlive: true
+    },
+    reconnectTries: 30
+  },
+  mongos: {
+    socketOptions: {
+      socketTimeoutMS: 0,
+      keepAlive: true
+    },
+    reconnectTries: 30
+  }
+});
+```
+
+在mongoose v5.x中可以在顶级声明这些，不需要额外的嵌套，这里列出了所有支持的选项。
+
+```js
+// Equivalent to the above code
+mongoose.connect(myUri, {
+  socketTimeoutMS: 0,
+  keepAlive: true,
+  reconnectTries: 30
+});
+```
+
+### 接下来
+既然已经介绍完了connections，让我们看一看models。
